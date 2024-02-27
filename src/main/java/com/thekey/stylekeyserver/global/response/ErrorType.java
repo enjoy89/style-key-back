@@ -25,7 +25,9 @@ public enum ErrorType {
     /* 패션 컨텐츠 관련 에러 메시지 */
     FILE_UPLOAD_FAILED(400, "이미지 등록이 실패하였습니다."),
     FILE_ALREADY_EXISTS(400, "이미 등록된 이미지입니다."),
-    INVALID_IMAGE_FORMAT(400, "올바른 형식의 이미지가 아닙니다.");
+    INVALID_IMAGE_FORMAT(400, "올바른 형식의 이미지가 아닙니다."),
+    FAIL_FILE_UPDATE(400, "이미지 수정이 실패하였습니다."),
+    FAIL_FILE_DELETE(400, "이미지 삭제가 실패하였습니다.");
 
     private final int statusCode;
     private final String message;

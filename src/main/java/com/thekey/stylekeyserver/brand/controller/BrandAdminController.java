@@ -9,8 +9,7 @@ import com.thekey.stylekeyserver.global.response.ErrorType;
 import com.thekey.stylekeyserver.global.response.SuccessType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -40,21 +39,18 @@ public class BrandAdminController {
     public ResponseEntity<ApiResponseDto> createBrand(@RequestPart BrandRequest requestDto,
                                                       @RequestPart("imageFile") MultipartFile imageFile) {
 
-        if (imageFile == null || imageFile.isEmpty()) {
-            return ResponseEntity.ok(ApiResponseDto.of(ErrorType.INVALID_IMAGE_FORMAT));
+        if(imageFile == null || imageFile.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponseDto.of(ErrorType.BAD_REQUEST));
         }
 
         try {
             Brand brand = brandAdminService.create(requestDto, imageFile);
             BrandResponse response = BrandResponse.of(brand);
             return ResponseEntity.ok(ApiResponseDto.of(SuccessType.SUCCESS, response));
-        } catch (FileAlreadyExistsException e) {
-            return ResponseEntity.ok(ApiResponseDto.of(ErrorType.FILE_ALREADY_EXISTS));
-        } catch (IOException e) {
-            return ResponseEntity.ok(ApiResponseDto.of(ErrorType.INVALID_IMAGE_FORMAT));
         } catch (Exception e) {
-            return ResponseEntity.ok(ApiResponseDto.of(ErrorType.FILE_UPLOAD_FAILED));
+            throw new RuntimeException(e);
         }
+
     }
 
     @GetMapping("/{id}")
@@ -65,7 +61,8 @@ public class BrandAdminController {
         return optional.map(brand -> {
             BrandResponse responseDto = BrandResponse.of(brand);
             return ResponseEntity.ok(ApiResponseDto.of(SuccessType.SUCCESS, responseDto));
-        }).orElse(ResponseEntity.ok(ApiResponseDto.of(ErrorType.BAD_REQUEST)));
+        }).orElse(ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponseDto.of(ErrorType.BAD_REQUEST)));
     }
 
     @GetMapping
@@ -99,25 +96,38 @@ public class BrandAdminController {
     @PutMapping("/{id}")
     @Operation(summary = "Update Brand", description = "브랜드 정보 수정")
     public ResponseEntity<ApiResponseDto> updateBrand(@PathVariable Long id,
-                                                     @RequestPart BrandRequest requestDto,
-                                                     @RequestPart(value = "imageFile", required = false) MultipartFile imageFile)
-            throws Exception {
+                                                      @RequestPart BrandRequest requestDto,
+                                                      @RequestPart(value = "imageFile", required = false) MultipartFile imageFile) {
         if (id == null) {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<Brand> optional = Optional.ofNullable(brandAdminService.update(id, requestDto, imageFile));
-        return optional.map(brand -> {
+        try {
+            Brand brand = brandAdminService.update(id, requestDto, imageFile);
             BrandResponse response = BrandResponse.of(brand);
             return ResponseEntity.ok(ApiResponseDto.of(SuccessType.SUCCESS, response));
-        }).orElse(ResponseEntity.ok(ApiResponseDto.of(ErrorType.BAD_REQUEST)));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponseDto.of(ErrorType.BAD_REQUEST));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponseDto.of(ErrorType.FAIL_FILE_UPDATE));
+        }
+
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete Brand", description = "브랜드 정보 삭제")
     public ResponseEntity<ApiResponseDto> deleteBrand(@PathVariable Long id) {
-        brandAdminService.delete(id);
-        return ResponseEntity.ok(ApiResponseDto.of(SuccessType.SUCCESS));
+        try {
+            brandAdminService.delete(id);
+            return ResponseEntity.ok(ApiResponseDto.of(SuccessType.SUCCESS));
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponseDto.of(ErrorType.BAD_REQUEST));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponseDto.of(ErrorType.FAIL_FILE_DELETE));
+        }
     }
-
 }
