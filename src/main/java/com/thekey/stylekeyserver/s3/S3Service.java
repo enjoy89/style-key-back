@@ -2,11 +2,11 @@ package com.thekey.stylekeyserver.s3;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.thekey.stylekeyserver.image.domain.Image;
+import com.thekey.stylekeyserver.image.domain.Type;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -37,9 +37,8 @@ public class S3Service {
     @Value("${cloud.aws.s3.item}")
     private String itemFolder;
 
-    public String uploadFile(MultipartFile file, String imageType) throws IOException {
-        String folderName = getFolderName(imageType);
-        String fileName = generateFileName(file, folderName);
+    public Image uploadFile(MultipartFile file, Type imageType) throws IOException {
+        String fileName = generateFileName(file, imageType);
 
         // 동일한 이름의 파일이 이미 존재하는지 확인한다.
         if (s3Client.doesObjectExist(bucket, fileName)) {
@@ -48,37 +47,33 @@ public class S3Service {
 
         File convertedFile = convertMultiPartToFile(file);
         uploadFileTos3bucket(fileName, convertedFile);
-        return getFileUrl(fileName);
+        String url = getFileUrl(fileName);
+
+        return Image.builder()
+                .url(url)
+                .type(imageType)
+                .fileName(fileName)
+                .isUsed(true)
+                .build();
     }
 
-    public boolean deleteFile(String fileUrl, String imageType) {
-        try {
-            String folderName = getFolderName(imageType).replaceAll("/", ""); // 설정에서 제공된 폴더 이름
-
-            URL url = new URL(fileUrl);
-            String fileName = url.getPath().substring(1);  // 앞에 있는 '/' 제거
-
-            String fullFileName = folderName + fileName.substring(fileName.indexOf("/"));
-
-            String decodedFullFileName = URLDecoder.decode(fullFileName, StandardCharsets.UTF_8.toString());
-            s3Client.deleteObject(new DeleteObjectRequest(bucket, decodedFullFileName));
-            return true;
-
-        } catch (AmazonServiceException e) {
-            return false;
-        } catch (UnsupportedEncodingException | MalformedURLException e) {
-            System.out.println(S3ErrorMessage.URL_DECODING_FAILED);
-           return false;
-        }
+    public void deleteFile(String fileUrl, Type imageType)
+            throws AmazonServiceException, UnsupportedEncodingException, MalformedURLException {
+        String folderName = getFolderName(imageType);
+        URL url = new URL(fileUrl);
+        String fileName = url.getPath();
+        String fullFileName = folderName + fileName.substring(fileName.indexOf("/"));
+        String decodedFullFileName = URLDecoder.decode(fullFileName, StandardCharsets.UTF_8.toString());
+        s3Client.deleteObject(new DeleteObjectRequest(bucket, decodedFullFileName));
     }
 
-    private String getFolderName(String imageType) {
+    private String getFolderName(Type imageType) {
         switch (imageType) {
-            case "brand":
+            case BRAND:
                 return brandFolder;
-            case "coordinateLook":
+            case COORDINATE_LOOK:
                 return coordinateLookFolder;
-            case "item":
+            case ITEM:
                 return itemFolder;
             default:
                 return "";
@@ -96,9 +91,10 @@ public class S3Service {
         return convertedFile;
     }
 
-    private String generateFileName(MultipartFile multiPart, String folderName) {
+    private String generateFileName(MultipartFile multiPart, Type imageType) {
         return new StringBuilder()
-                .append(folderName)
+                .append(imageType.getName())
+                .append("/")
                 .append(multiPart.getOriginalFilename())
                 .toString();
     }
