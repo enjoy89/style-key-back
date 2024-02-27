@@ -1,6 +1,7 @@
 package com.thekey.stylekeyserver.brand.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.thekey.stylekeyserver.image.domain.Image;
 import com.thekey.stylekeyserver.stylepoint.domain.StylePoint;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,6 +24,7 @@ public class Brand {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "brand_id")
     private Long id;
 
     @Column(name = "brand_title")
@@ -33,8 +36,9 @@ public class Brand {
     @Column(name = "brand_site_url")
     private String site_url;
 
-    @Column(name = "brand_image_url")
-    private String imageUrl;
+    @OneToOne
+    @JoinColumn(name = "brand_image_id")
+    private Image image;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "style_point_id")
@@ -42,12 +46,12 @@ public class Brand {
     private StylePoint stylePoint;
 
     @Builder
-    public Brand(String title, String title_eng, String site_url, String imageUrl,
+    public Brand(String title, String title_eng, String site_url, Image image,
                  StylePoint stylePoint) {
         this.title = title;
         this.title_eng = title_eng;
         this.site_url = site_url;
-        this.imageUrl = imageUrl;
+        this.image = image;
         this.stylePoint = stylePoint;
     }
 
@@ -58,8 +62,10 @@ public class Brand {
         this.stylePoint = stylePoint;
     }
 
-    public void updateImage(String newImageUrl) {
-        this.imageUrl = newImageUrl;
+    public void setImage(Image newImage) {
+        if(this.image != null) {
+            this.image.setUnused();
+        }
+        this.image = newImage;
     }
-
 }

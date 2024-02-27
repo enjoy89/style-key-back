@@ -17,16 +17,16 @@ import org.springframework.web.multipart.MultipartFile;
 @JsonNaming(SnakeCaseStrategy.class)
 public class BrandRequest {
 
-    @Schema(description = "브랜드 이름", example = "솔티페블")
+    @Schema(description = "브랜드 이름")
     private String title;
 
-    @Schema(description = "브랜드 영문 이름", example = "salty pebble")
+    @Schema(description = "브랜드 영문 이름")
     private String title_eng;
 
-    @Schema(description = "브랜드 웹 사이트 URL", example = "https://www.saltypebble.com/")
+    @Schema(description = "브랜드 웹 사이트 URL")
     private String site_url;
 
-    @Schema(description = "스타일 포인트 ID", example = "1")
+    @Schema(description = "스타일 포인트 ID")
     private Long stylePointId;
 
     @Builder
@@ -37,12 +37,11 @@ public class BrandRequest {
         this.stylePointId = stylePointId;
     }
 
-    public Brand toEntity(StylePoint stylePoint, String imageUrl) {
+    public Brand toEntity(StylePoint stylePoint) {
         return Brand.builder()
                 .title(this.title)
                 .title_eng(this.title_eng)
                 .site_url(this.site_url)
-                .imageUrl(imageUrl)
                 .stylePoint(stylePoint)
                 .build();
     }

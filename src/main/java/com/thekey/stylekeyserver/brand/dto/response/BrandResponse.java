@@ -13,26 +13,26 @@ import lombok.NoArgsConstructor;
 @JsonNaming(SnakeCaseStrategy.class)
 public class BrandResponse {
 
-    @Schema(description = "브랜드 ID", example = "1")
+    @Schema(description = "브랜드 ID")
     private Long id;
 
-    @Schema(description = "브랜드 이름", example = "솔티페블")
+    @Schema(description = "브랜드 이름")
     private String title;
 
-    @Schema(description = "브랜드 영문 이름", example = "salty pebble")
+    @Schema(description = "브랜드 영문 이름")
     private String title_eng;
 
-    @Schema(description = "브랜드 웹 사이트 URL", example = "https://www.saltypebble.com/")
+    @Schema(description = "브랜드 웹 사이트 URL")
     private String site_url;
 
-    @Schema(description = "브랜드 이미지 URL", example = "brand_image_url")
+    @Schema(description = "브랜드 이미지 URL")
     private String imageUrl;
 
-    @Schema(description = "스타일 포인트 ID", example = "1")
+    @Schema(description = "스타일 포인트 ID")
     private Long stylePointId;
 
     @Builder
-    public BrandResponse(Long id, String title, String title_eng, String description, String site_url, String imageUrl,
+    public BrandResponse(Long id, String title, String title_eng, String site_url, String imageUrl,
                          Long stylePointId) {
         this.id = id;
         this.title = title;
@@ -43,12 +43,14 @@ public class BrandResponse {
     }
 
     public static BrandResponse of(Brand brand) {
+        String imageUrl = brand.getImage().getUrl();
+
         return BrandResponse.builder()
                 .id(brand.getId())
                 .title(brand.getTitle())
                 .title_eng(brand.getTitle_eng())
                 .site_url(brand.getSite_url())
-                .imageUrl(brand.getImageUrl())
+                .imageUrl(imageUrl)
                 .stylePointId(brand.getStylePoint().getId())
                 .build();
     }
